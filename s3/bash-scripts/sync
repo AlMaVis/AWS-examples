@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# This script syncs creates a local directory, create dummy files, and syncs them to an S3 bucket.
+echo "Syncing files to S3 bucket..."
+
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <bucket_name> <local_directory>"
+    exit 1
+fi
+
+# Check if the local directory exists, then remove it, if it does not exist, create it
+BUCKET_NAME="$1"
+LOCAL_DIR="$2"
+if [ -d "$LOCAL_DIR" ]; then
+    rm -rf "$LOCAL_DIR"
+fi
+mkdir -p "$LOCAL_DIR"
+
+
+# Generate dummy files in the local directory
+for i in {1..5}; do
+    echo "This is a dummy file $i" > "$LOCAL_DIR/dummy_file_$i.txt"
+done
+
+# Sync the local directory to the S3 bucket
+aws s3 sync "$LOCAL_DIR" "s3://$BUCKET_NAME/" --output text
+if [ $? -eq 0 ]; then
+    echo "Files synced successfully to bucket '$BUCKET_NAME'."
+else
+    echo "Failed to sync files to bucket '$BUCKET_NAME'."
+    exit 1
+fi
+# Note: Ensure that the bucket exists and you have the necessary permissions to sync files.
+# Cleanup: Remove the local directory after syncing
+rm -rf "$LOCAL_DIR"
+echo "Local directory '$LOCAL_DIR' removed after syncing."
+# End of script
+
+
+

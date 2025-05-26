@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# This script uploads a file to an S3 bucket.
+echo "Uploading file to S3 bucket..."
+
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <bucket_name> <file_path>"
+    exit 1
+fi
+BUCKET_NAME="$1"
+FILE_PATH="$2"
+aws s3 cp "$FILE_PATH" "s3://$BUCKET_NAME/" --output text
+if [ $? -eq 0 ]; then
+    echo "File '$FILE_PATH' uploaded successfully to bucket '$BUCKET_NAME'."
+else
+    echo "Failed to upload file '$FILE_PATH' to bucket '$BUCKET_NAME'."
+    exit 1
+fi
+# Note: Ensure that the file exists and the bucket is accessible.
+

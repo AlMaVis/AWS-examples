@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# This script lists the latest buckets created in an AWS account. 
+aws s3api list-buckets | jq -r '.Buckets | sort_by(.CreationDate) | reverse | .[0] | .Name'

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# This script creates an S3 bucket in a specified region.
+# Usage: ./create_bucket.sh <bucket_name> <region>
+
+echo "Creating bucket..."
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "There needs to be a bucket name and a region. Usage: $0 <bucket_name> <region>"
+    exit 1
+fi
+
+aws s3api create-bucket \
+    --bucket "$1" \
+    --region "$2" \
+    --create-bucket-configuration LocationConstraint="$2"\
+    --output text
+
+if [ $? -eq 0 ]; then
+    echo "Bucket '$1' created successfully in region '$2'."
+else
+    echo "Failed to create bucket '$1'."
+    exit 1
+fi

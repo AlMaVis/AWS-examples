@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# This script deletes objects in an S3 bucket.
+echo "Deleting objects in bucket..."
+if [ "$#" -ne 1 ]; then
+    echo "There needs to be a bucket name. Usage: $0 <bucket_name>"
+    exit 1
+fi
+
+# If verbose mode is enabled, list objects while deleting
+if [ "$2" == "--verbose" ]; then
+    aws s3api list-objects-v2 --bucket "$1" --output text
+    echo "Deleting all objects in bucket '$1'..."
+    aws s3 rm "s3://$1/" --recursive --output text
+else
+    aws s3 rm "s3://$1/" --recursive --quiet --output text
+fi
+if [ $? -eq 0 ]; then
+    echo "All objects deleted successfully in bucket '$1'."
+else
+    echo "Failed to delete objects in bucket '$1'."
+    exit 1
+fi

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# This script deletes an S3 bucket.
+echo "Deleting bucket..."
+
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 1 ]; then
+    echo "There needs to be a bucket name. Usage: $0 <bucket_name>"
+    exit 1
+fi
+aws s3api delete-bucket \
+    --bucket "$1" \
+    --output text
+
+if [ $? -eq 0 ]; then
+    echo "Bucket '$1' deleted successfully."
+else
+    echo "Failed to delete bucket '$1'."
+    exit 1
+fi
+# Note: The bucket must be empty before it can be deleted.
