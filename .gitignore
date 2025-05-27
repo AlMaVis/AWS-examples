@@ -3,7 +3,7 @@
 /s3/sdk/ruby/vendor
 
 # terraform files
-/terraform/.terraform
-/terraform/terraform.lock.hcl
-/terraform/terraform.tfstate
-/terraform/terraform.tfstate.backup
+/s3/iac/terraform/.terraform
+/s3/iac/terraform/.terraform.lock.hcl
+/s3/iac/terraform/terraform.tfstate
+/s3/iac/terraform/terraform.tfstate.backup
