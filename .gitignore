@@ -1,2 +1,9 @@
+# ruby files
 /s3/sdk/ruby/.bundle
 /s3/sdk/ruby/vendor
+
+# terraform files
+/terraform/.terraform
+/terraform/terraform.lock.hcl
+/terraform/terraform.tfstate
+/terraform/terraform.tfstate.backup
