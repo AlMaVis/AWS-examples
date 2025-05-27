@@ -2,8 +2,19 @@
 /s3/sdk/ruby/.bundle
 /s3/sdk/ruby/vendor
 
-# terraform files
-/s3/iac/terraform/.terraform
-/s3/iac/terraform/.terraform.lock.hcl
-/s3/iac/terraform/terraform.tfstate
-/s3/iac/terraform/terraform.tfstate.backup
+# Terraform directories
+**/.terraform/
+
+# Terraform state files
+**/terraform.tfstate
+**/terraform.tfstate.backup
+
+# Terraform lock file
+**/.terraform.lock.hcl
+
+# Crash logs
+crash.log
+
+# Sensitive override files (optional, if you use them)
+*.tfvars
+*.tfvars.json
