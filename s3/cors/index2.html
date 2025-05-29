@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Website 2 - CORS Test</title>
+</head>
+<body>
+  <h1>Website 2 - CORS Test</h1>
+  <p>This page will try to fetch a resource from Website 1 (cors-example-0001).</p>
+  <button id="fetch-btn">Fetch index1.html from Website 1</button>
+  <pre id="result"></pre>
+  <script>
+    document.getElementById('fetch-btn').onclick = function() {
+      fetch('http://cors-example-0001.s3-website.eu-west-3.amazonaws.com/index1.html')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('result').textContent = data;
+        })
+        .catch(err => {
+          document.getElementById('result').textContent = 'Error: ' + err;
+        });
+    };
+  </script>
+</body>
+</html>

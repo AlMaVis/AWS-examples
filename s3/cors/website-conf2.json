@@ -1,0 +1,8 @@
+{
+  "IndexDocument": {
+    "Suffix": "index2.html"
+  },
+  "ErrorDocument": {
+    "Key": "error.html"
+  }
+}
