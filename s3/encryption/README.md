@@ -96,6 +96,14 @@ This document summarizes hands-on experience with different S3 encryption option
 
 ---
 
+## Clean Up
+
+```sh
+aws s3 rb s3://encryption-examples-001 --force
+```
+
+---
+
 ## Key Points
 
 - SSE-S3, SSE-KMS, and SSE-C were tested for object encryption.

@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  This template creates an IAM role for us to assume and create a resource we'll have access to.
+Parameters:
+  BucketName:
+    Type: String
+    Description: The name of the S3 bucket to create.
+    Default: sts-example-bucket-001
+  UserName:
+    Type: String
+    Description: The name of the IAM user that will assume the role.
+    Default: sts-example-user
+Resources:
+  # Create an S3 bucket with the specified name
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref BucketName
+  StsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:user/${UserName}"
+
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: s3access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: [
+                  !Sub 'arn:aws:s3:::${BucketName}',
+                  !Sub 'arn:aws:s3:::${BucketName}/*'
+                ]

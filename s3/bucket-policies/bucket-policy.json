@@ -5,7 +5,7 @@
       "Sid": "AllowRestrictedUserFullAccess",
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::094778960127:user/aws-examples-restricted"
+        "AWS": "arn:aws:iam::${AWS_ACCOUNT_ID}:user/aws-examples-restricted"
       },
       "Action": [
         "s3:GetObject",
@@ -18,7 +18,7 @@
       "Sid": "DenyRestrictedUserSecretFolder",
       "Effect": "Deny",
       "Principal": {
-        "AWS": "arn:aws:iam::094778960127:user/aws-examples-restricted"
+        "AWS": "arn:aws:iam::${AWS_ACCOUNT_ID}:user/aws-examples-restricted"
       },
       "Action": [
         "s3:GetObject",

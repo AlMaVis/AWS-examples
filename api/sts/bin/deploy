@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+aws cloudformation deploy \
+  --template-file iam-role.yaml \
+  --capabilities CAPABILITY_IAM \
+  --stack-name sts-example \
