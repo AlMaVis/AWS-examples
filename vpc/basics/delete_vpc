@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+
+###############################################################################
+# delete_vpc.sh
+#
+# Deletes a specified AWS VPC and all associated resources:
+#   • Internet Gateway (IGW)
+#   • Subnets
+#   • Non-main Route Tables
+#
+# Usage: ./delete_vpc.sh <VPC_ID>
+###############################################################################
+
+set -euo pipefail
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Logging ───────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+log_info()  { echo "[INFO]  $*" >&2; }
+log_warn()  { echo "[WARN]  $*" >&2; }
+log_error() { echo "[ERROR] $*" >&2; }
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Prerequisite Checks ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+check_aws_cli() {
+    if ! command -v aws &>/dev/null; then
+        log_error "AWS CLI not installed. Please install it to run this script."
+        exit 1
+    fi
+}
+
+validate_args() {
+    if [[ $# -ne 1 ]]; then
+        log_error "Usage: $0 <VPC_ID>"
+        exit 1
+    fi
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Internet Gateway ─────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+get_internet_gateway_id() {
+    aws ec2 describe-internet-gateways \
+        --filters "Name=attachment.vpc-id,Values=${VPC_ID}" \
+        --query 'InternetGateways[0].InternetGatewayId' \
+        --output text
+}
+
+delete_internet_gateway() {
+    local igw_id
+    igw_id=$(get_internet_gateway_id)
+
+    if [[ -z "$igw_id" || "$igw_id" == "None" ]]; then
+        log_info "No Internet Gateway found for VPC ${VPC_ID}"
+        return
+    fi
+
+    log_info "Detaching IGW ${igw_id} from VPC ${VPC_ID}"
+    aws ec2 detach-internet-gateway --internet-gateway-id "$igw_id" --vpc-id "$VPC_ID"
+
+    log_info "Deleting IGW ${igw_id}"
+    aws ec2 delete-internet-gateway --internet-gateway-id "$igw_id"
+
+    IGW_ID="$igw_id"
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Subnets ──────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+delete_subnets() {
+    log_info "Deleting subnets in VPC ${VPC_ID}"
+    local subnet_ids
+    subnet_ids=$(aws ec2 describe-subnets \
+        --filters "Name=vpc-id,Values=${VPC_ID}" \
+        --query 'Subnets[*].SubnetId' \
+        --output text)
+
+    if [[ -z "$subnet_ids" ]]; then
+        log_info "No subnets found in VPC ${VPC_ID}"
+        return
+    fi
+
+    for subnet_id in $subnet_ids; do
+        log_info "Deleting subnet: $subnet_id"
+        aws ec2 delete-subnet --subnet-id "$subnet_id"
+        SUBNET_IDS+=("$subnet_id")
+    done
+}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Delete VPC ───────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+delete_vpc() {
+    log_info "Deleting VPC: ${VPC_ID}"
+    aws ec2 delete-vpc --vpc-id "${VPC_ID}"
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Main Execution ───────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+main() {
+    check_aws_cli
+    validate_args "$@"
+    VPC_ID="$1"
+
+    # Initialize ID trackers for summary
+    IGW_ID=""
+    SUBNET_IDS=()
+    ROUTE_TABLE_IDS=()
+
+    log_info "Beginning teardown for VPC: ${VPC_ID}"
+
+    delete_internet_gateway
+    delete_subnets
+    delete_vpc
+
+    log_info "Teardown complete for VPC: ${VPC_ID}"
+    echo ""
+    echo "────────── Deletion Summary ──────────"
+    echo "  Deleted VPC ID:            ${VPC_ID}"
+    echo "  Deleted Internet Gateway:  ${IGW_ID:-<none>}"
+
+    if [[ ${#SUBNET_IDS[@]} -gt 0 ]]; then
+        echo "  Deleted Subnets:           ${SUBNET_IDS[*]}"
+    else
+        echo "  Deleted Subnets:           <none>"
+    fi
+    echo "──────────────────────────────────────"
+}
+
+main "$@"

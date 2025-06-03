@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+
+###############################################################################
+# create_vpc.sh
+#
+# Creates an AWS VPC with:
+#   • Internet Gateway (IGW)
+#   • Subnet
+#   • Route Table configured to route traffic to the IGW
+#   • DNS support enabled
+#
+# Usage: ./create_vpc.sh
+###############################################################################
+
+set -euo pipefail
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Constants ─────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+readonly REGION="eu-west-3"
+readonly VPC_CIDR="172.1.0.0/16"
+readonly SUBNET_CIDR="172.1.0.0/16"
+readonly AVAILABILITY_ZONE="${REGION}a"
+
+readonly VPC_NAME="my-vpc-1"
+readonly IGW_NAME="my-igw-1"
+readonly SUBNET_NAME="my-subnet-1"
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Logging Helpers ──────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Always send logs to stderr so that stdout remains “clean” for command substitutions.
+log_info()  { echo "[INFO]  $*" >&2; }
+log_warn()  { echo "[WARN]  $*" >&2; }
+log_error() { echo "[ERROR] $*" >&2; }
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Prerequisites Check ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+check_aws_cli() {
+    if ! command -v aws &>/dev/null; then
+        log_error "AWS CLI not found. Please install or configure it before running this script."
+        exit 1
+    fi
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Create VPC ────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+create_vpc() {
+    log_info "Creating VPC with CIDR block ${VPC_CIDR} in region ${REGION}"
+    aws ec2 create-vpc \
+        --cidr-block "${VPC_CIDR}" \
+        --tag-specifications "ResourceType=vpc,Tags=[{Key=Name,Value=${VPC_NAME}}]" \
+        --region "${REGION}" \
+        --query "Vpc.VpcId" \
+        --output text
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Create Internet Gateway ──────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+create_internet_gateway() {
+    log_info "Creating Internet Gateway"
+    aws ec2 create-internet-gateway \
+        --tag-specifications "ResourceType=internet-gateway,Tags=[{Key=Name,Value=${IGW_NAME}}]" \
+        --query "InternetGateway.InternetGatewayId" \
+        --output text
+}
+
+attach_igw_to_vpc() {
+    local igw_id=$1
+    local vpc_id=$2
+    log_info "Attaching Internet Gateway ${igw_id} to VPC ${vpc_id}"
+    aws ec2 attach-internet-gateway \
+        --internet-gateway-id "${igw_id}" \
+        --vpc-id "${vpc_id}"
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Enable DNS Support ────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+enable_dns_support() {
+    local vpc_id=$1
+    log_info "Enabling DNS support on VPC ${vpc_id}"
+    aws ec2 modify-vpc-attribute \
+        --vpc-id "${vpc_id}" \
+        --enable-dns-support "{\"Value\":true}"
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Create Subnet ─────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+create_subnet() {
+    local vpc_id=$1
+    log_info "Creating Subnet in VPC ${vpc_id} with CIDR ${SUBNET_CIDR} in AZ ${AVAILABILITY_ZONE}"
+    aws ec2 create-subnet \
+        --vpc-id "${vpc_id}" \
+        --cidr-block "${SUBNET_CIDR}" \
+        --availability-zone "${AVAILABILITY_ZONE}" \
+        --tag-specifications "ResourceType=subnet,Tags=[{Key=Name,Value=${SUBNET_NAME}}]" \
+        --query "Subnet.SubnetId" \
+        --output text
+}
+
+enable_auto_assign_public_ip() {
+    local subnet_id=$1
+    log_info "Enabling auto-assign public IPv4 on Subnet ${subnet_id}"
+    aws ec2 modify-subnet-attribute \
+        --subnet-id "${subnet_id}" \
+        --map-public-ip-on-launch
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Route Table Helpers ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+get_main_route_table_id() {
+    local vpc_id=$1
+    aws ec2 describe-route-tables \
+        --filters "Name=vpc-id,Values=${vpc_id}" \
+        --query "RouteTables[0].RouteTableId" \
+        --output text
+}
+
+associate_subnet_with_route_table() {
+    local subnet_id=$1
+    local route_table_id=$2
+    log_info "Associating Subnet ${subnet_id} with Route Table ${route_table_id}"
+    aws ec2 associate-route-table \
+        --subnet-id "${subnet_id}" \
+        --route-table-id "${route_table_id}"
+}
+
+create_default_route_to_igw() {
+    local route_table_id=$1
+    local igw_id=$2
+    log_info "Creating default route in Route Table ${route_table_id} to IGW ${igw_id}"
+    aws ec2 create-route \
+        --route-table-id "${route_table_id}" \
+        --destination-cidr-block "0.0.0.0/0" \
+        --gateway-id "${igw_id}"
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+#─── Main Execution Flow ───────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+
+main() {
+    check_aws_cli
+
+    # 1) Create the VPC
+    VPC_ID=$(create_vpc)
+    log_info "Created VPC: ${VPC_ID}"
+
+    # 2) Create and Attach an Internet Gateway
+    IGW_ID=$(create_internet_gateway)
+    log_info "Created Internet Gateway: ${IGW_ID}"
+    attach_igw_to_vpc "${IGW_ID}" "${VPC_ID}"
+
+    # 3) Turn on DNS support for name resolution
+    enable_dns_support "${VPC_ID}"
+
+    # 4) Create a Subnet inside our VPC
+    SUBNET_ID=$(create_subnet "${VPC_ID}")
+    log_info "Created Subnet: ${SUBNET_ID}"
+
+    # 5) Enable auto‐assign public IPv4 on that Subnet
+    enable_auto_assign_public_ip "${SUBNET_ID}"
+
+    # 6) Wire up the Subnet to the VPC’s main route table
+    RT_ID=$(get_main_route_table_id "${VPC_ID}")
+    associate_subnet_with_route_table "${SUBNET_ID}" "${RT_ID}"
+
+    # 7) Add a default‐route (0.0.0.0/0) pointing to our IGW
+    create_default_route_to_igw "${RT_ID}" "${IGW_ID}"
+
+    # 8) Summary
+    log_info "VPC setup completed successfully."
+    echo ""
+    echo "────────── Summary ──────────"
+    echo "  VPC ID:                ${VPC_ID}"
+    echo "  Internet Gateway ID:   ${IGW_ID}"
+    echo "  Subnet ID:             ${SUBNET_ID}"
+    echo "  Route Table ID:        ${RT_ID}"
+    echo "─────────────────────────────"
+}
+
+main
