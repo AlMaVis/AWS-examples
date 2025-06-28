@@ -16,12 +16,12 @@ repo_name: GitHub
 edit_uri: edit/main/docs/
 nav:
   - Home: index.md
-  - Terraform Modules:
+  - Modules:
       - API: 
         - STS: api/sts/index.md
       - S3:
         - ACLs: s3/acls/index.md
-        - Bucket Policies: s3/bucket-Policies/index.md
+        - Bucket Policies: s3/bucket-policies/index.md
         - Checksums: s3/checksums/index.md 
         - Cors: s3/cors/index.md
         - Encryption:
@@ -31,5 +31,4 @@ nav:
         - Prefixes: s3/prefixes/index.md
         - Storage Classes: s3/storage-classes/index.md
       - VPC:
-        - Basics: vpc/basics/index.md
         - NACLs: vpc/nacl/index.md
