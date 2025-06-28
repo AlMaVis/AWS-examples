@@ -18,18 +18,18 @@ nav:
   - Home: index.md
   - Terraform Modules:
       - API: 
-        - STS: api/sts/README.md
+        - STS: api/sts/index.md
       - S3:
-        - ACLs: s3/acls/README.md
-        - Bucket Policies: s3/bucket-Policies/README.md
-        - Checksums: s3/checksums/README.md 
-        - Cors: s3/cors/README.md
+        - ACLs: s3/acls/index.md
+        - Bucket Policies: s3/bucket-Policies/index.md
+        - Checksums: s3/checksums/index.md 
+        - Cors: s3/cors/index.md
         - Encryption:
-          - Server-Side: s3/encryption/README.md
-          - Client-Side: s3/encryption-client-site/README.md
-        - Metadata: s3/metadata/README.md
-        - Prefixes: s3/prefixes/README.md
-        - Storage Classes: s3/storage-classes/README.md
+          - Server-Side: s3/encryption/index.md
+          - Client-Side: s3/encryption-client-site/index.md
+        - Metadata: s3/metadata/index.md
+        - Prefixes: s3/prefixes/index.md
+        - Storage Classes: s3/storage-classes/index.md
       - VPC:
-        - Basics: vpc/basics/README.md
-        - NACLs: vpc/nacl/README.md
+        - Basics: vpc/basics/index.md
+        - NACLs: vpc/nacl/index.md
