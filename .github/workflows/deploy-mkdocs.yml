@@ -12,6 +12,16 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v2
 
+      - name: Mirror README.md into docs/ as index.md
+        run: |
+          mkdir -p docs
+          find . -type f -name "README.md" ! -path "./docs/*" | while read path; do
+              relpath="${path#./}"
+              target="docs/${relpath%README.md}index.md"
+              mkdir -p "$(dirname "$target")"
+              cp "$path" "$target"
+          done
+
       - name: Deploy docs
         uses: AlMaVis/deploy-gh-pages@master
         # Or use mhausenblas/mkdocs-deploy-gh-pages@nomaterial to build without the mkdocs-material theme
