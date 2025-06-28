@@ -1,3 +1,5 @@
+[![Publish docs via GitHub Pages](https://github.com/AlMaVis/AWS-examples/actions/workflows/deploy-mkdocs.yml/badge.svg)](https://github.com/AlMaVis/AWS-examples/actions/workflows/deploy-mkdocs.yml)
+
 # AWS-examples
 
 A comprehensive codebase containing AWS examples curated during my preparation for the **AWS Certified Solutions Architect – Associate** certification. This repository includes practical hands-on commands and scripts using:
